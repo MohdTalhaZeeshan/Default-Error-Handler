@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="4e5f9801-033d-45ce-8db9-869236e6b042" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<configuration doc:name="Configuration" doc:id="b2b47994-a567-4c2c-b40b-d05febccd54f" defaultErrorHandler-ref="global-error-handlerError_Handler" />
+	<flow name="errorhandlingFlow" doc:id="6102e11f-21e4-4db8-a9ce-8fc680a8de6b" >
+		<http:listener doc:name="Listener" doc:id="a3557e03-2a53-42da-91e8-b03b46533dae" path="/default" config-ref="HTTP_Listener_config">
+		</http:listener>
+		<set-variable value="apple" doc:name="Set Variable" doc:id="43d128de-efcd-49a6-88a9-6ee12b23f8b3" variableName="fruit"/>
+		<flow-ref doc:name="Flow Reference" doc:id="6590684c-b3f9-4cc1-bd2f-fda374d79e10" name="errorhandlingFlow1"/>
+		<ee:transform doc:name="Success" doc:id="ad3cf553-72f6-4c28-bffc-375b7ea9cd48" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+"Success"]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="acf8491b-47f1-429b-b376-fb109415060a" message="#[payload]"/>
+	</flow>
+	<flow name="errorhandlingFlow1" doc:id="714059eb-2614-4df3-867d-afce7583f6c4" >
+		<try doc:name="Try" doc:id="796cb173-9ec8-45b7-ac42-18c218c7c68b" >
+			<http:request method="GET" doc:name="Request" doc:id="8b5f0c36-4923-43d0-bd4d-1602a9ca859c" url="xyz.sjkd.com" />
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="cca56daf-d8a6-4cee-a7db-7fb7117e3a8e" >
+					<ee:transform doc:name="Transform Message" doc:id="986c27b1-2209-418b-aeaa-4a12bcf0afca" >
+						<ee:message >
+							<ee:set-payload ><![CDATA["Error in Try Block"]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<ee:transform doc:name="Transform Message" doc:id="6379495f-f8d1-47ea-bf4b-009a74e29297">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+"Private Flow"]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="7e86c039-c0c6-4059-9c24-8a5fa52c31c4" >
+				<ee:transform doc:name="Transform Message" doc:id="df799d4c-cb01-4b0e-b8f0-c13b69425b0b">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+"Transform Message in Private Error Handling"]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<logger level="INFO" doc:name="Logger" doc:id="ac5edf34-286f-4271-b9b8-49a027e1e4c9" message='#["Logger in Private Error Handler"]' />
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<error-handler name="global-error-handlerError_Handler" doc:id="dbef2a7e-3f59-4213-abb6-f9519a702072" >
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="bc10c6e8-8d31-4cfd-9588-889628f3df3b" type="HTTP:BAD_REQUEST">
+			<ee:transform doc:name="Transform Message" doc:id="33a7f3b9-f9d9-4cbb-bb75-a632a689e292" >
+				<ee:message >
+					<ee:set-payload ><![CDATA["Error Occured in Global Error Handler - On Error Propagate."]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+		</on-error-propagate>
+	</error-handler>
+</mule>
